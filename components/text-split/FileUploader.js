@@ -118,20 +118,53 @@ export default function FileUploader({
    * 处理文件选择
    */
   const handleFileSelect = event => {
-    const selectedFiles = Array.from(event.target.files);
+    try {
+      const selectedFiles = Array.from(event.target.files);
 
-    checkMaxSize(selectedFiles);
-    checkInvalidFiles(selectedFiles);
+      checkMaxSize(selectedFiles);
+      checkInvalidFiles(selectedFiles);
 
-    const validFiles = getvalidFiles(selectedFiles);
+      const validFiles = getvalidFiles(selectedFiles);
+      const candidates = validFiles.map(file => ({
+        key: `local-${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+        source: 'local',
+        name: file.name,
+        size: file.size,
+        file
+      }));
 
-    if (validFiles.length > 0) {
-      setFiles(prev => [...prev, ...validFiles]);
+      if (candidates.length > 0) {
+        setFiles(prev => [...prev, ...candidates]);
+      }
+      const hasPdfFiles = candidates.filter(item => item.name.toLowerCase().endsWith('.pdf'));
+      if (hasPdfFiles.length > 0) {
+        setpdfProcessConfirmOpen(true);
+        setPdfFiles(prev => [...prev, ...hasPdfFiles]);
+      }
+    } catch (error) {
+      toast.error(error.message || t('textSplit.uploadFailed'));
     }
-    const hasPdfFiles = selectedFiles.filter(file => file.name.endsWith('.pdf'));
-    if (hasPdfFiles.length > 0) {
+  };
+
+  const handleDepartmentFileSelect = selectedFiles => {
+    const existingIds = new Set(files.filter(file => file.source === 'department').map(file => String(file.sourceId)));
+    const candidates = selectedFiles
+      .filter(file => !existingIds.has(String(file.id)))
+      .map(file => ({
+        key: `department-${file.id}`,
+        source: 'department',
+        sourceId: String(file.id),
+        name: file.fileName,
+        size: null,
+        extension: file.extension,
+        secretLevel: file.secretLevel
+      }));
+    if (candidates.length === 0) return;
+    setFiles(prev => [...prev, ...candidates]);
+    const pdfCandidates = candidates.filter(item => item.extension === 'pdf');
+    if (pdfCandidates.length > 0) {
       setpdfProcessConfirmOpen(true);
-      setPdfFiles(hasPdfFiles);
+      setPdfFiles(prev => [...prev, ...pdfCandidates]);
     }
   };
 
@@ -142,7 +175,7 @@ export default function FileUploader({
     const fileToRemove = files[index];
     setFiles(prev => prev.filter((_, i) => i !== index));
     if (fileToRemove && fileToRemove.name.toLowerCase().endsWith('.pdf')) {
-      setPdfFiles(prevPdfFiles => prevPdfFiles.filter(pdfFile => pdfFile.name !== fileToRemove.name));
+      setPdfFiles(prevPdfFiles => prevPdfFiles.filter(pdfFile => pdfFile.key !== fileToRemove.key));
     }
   };
 
@@ -188,13 +221,53 @@ export default function FileUploader({
     setUploading(true);
     try {
       const uploadedFileInfos = [];
-      for (const file of files) {
-        const { fileContent, fileName } = await getContent(file);
-        const data = await fileApi.uploadFile({ file, projectId, fileContent, fileName, t });
-        uploadedFileInfos.push({ fileName: data.fileName, fileId: data.fileId });
+      const successfulKeys = new Set();
+      const failures = [];
+      const localFiles = files.filter(item => item.source === 'local');
+      const departmentFiles = files.filter(item => item.source === 'department');
+
+      for (const item of localFiles) {
+        try {
+          const { fileContent, fileName } = await getContent(item.file);
+          const data = await fileApi.uploadFile({ file: item.file, projectId, fileContent, fileName, t });
+          uploadedFileInfos.push({ fileName: data.fileName, fileId: data.fileId });
+          successfulKeys.add(item.key);
+        } catch (error) {
+          failures.push(`${item.name}: ${error.message}`);
+        }
       }
-      toast.success(t('textSplit.uploadSuccess', { count: files.length }));
-      setFiles([]);
+
+      if (departmentFiles.length > 0) {
+        const data = await fileApi.importDepartmentFiles({
+          projectId,
+          fileIds: departmentFiles.map(item => item.sourceId)
+        });
+        for (const imported of data.succeeded || []) {
+          uploadedFileInfos.push({ fileName: imported.fileName, fileId: imported.fileId });
+          successfulKeys.add(`department-${imported.sourceId}`);
+        }
+        const namesById = new Map(departmentFiles.map(item => [item.sourceId, item.name]));
+        for (const failed of data.failed || []) {
+          failures.push(`${namesById.get(String(failed.sourceId)) || failed.sourceId}: ${failed.message}`);
+        }
+      }
+
+      if (uploadedFileInfos.length === 0) {
+        throw new Error(failures.join('; ') || t('textSplit.uploadFailed'));
+      }
+
+      setFiles(previous => previous.filter(item => !successfulKeys.has(item.key)));
+      setPdfFiles([]);
+      toast.success(t('textSplit.uploadSuccess', { count: uploadedFileInfos.length }));
+      if (failures.length > 0) {
+        toast.warning(
+          t('textSplit.departmentFiles.partialFailure', {
+            defaultValue: '{{count}} 个文件导入失败：{{message}}',
+            count: failures.length,
+            message: failures.join('; ')
+          })
+        );
+      }
       setCurrentPage(1);
       await fetchUploadedFiles();
       if (onUploadSuccess) {
@@ -297,6 +370,8 @@ export default function FileUploader({
                 onRemoveFile={removeFile}
                 onUpload={uploadFiles}
                 selectedModel={selectedModelInfo}
+                onDepartmentFileSelect={handleDepartmentFileSelect}
+                queuedDepartmentIds={files.filter(file => file.source === 'department').map(file => file.sourceId)}
               />
             </Grid>
 

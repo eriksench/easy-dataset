@@ -7,4 +7,9 @@ services:
     volumes:
       - ./local-db:/app/local-db
       - ./prisma:/app/prisma
+    environment:
+      KNOW_HUB_BASE_URL: ${KNOW_HUB_BASE_URL:-http://host.docker.internal:8080/jeecg-boot}
+      KNOW_HUB_INTEGRATION_TOKEN: ${KNOW_HUB_INTEGRATION_TOKEN:-}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     restart: unless-stopped

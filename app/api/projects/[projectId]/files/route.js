@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getProject } from '@/lib/db/projects';
 import path from 'path';
-import { getProjectRoot, ensureDir } from '@/lib/db/base';
+import { getProjectRoot } from '@/lib/db/base';
 import { promises as fs } from 'fs';
-import {
-  checkUploadFileInfoByMD5,
-  createUploadFileInfo,
-  delUploadFileInfoById,
-  getUploadFilesPagination
-} from '@/lib/db/upload-files';
-import { getFileMD5 } from '@/lib/util/file';
+import { delUploadFileInfoById, getUploadFilesPagination } from '@/lib/db/upload-files';
 import { batchSaveTags } from '@/lib/db/tags';
 import { getProjectChunks, getProjectTocByName } from '@/lib/file/text-splitter';
 import { handleDomainTree } from '@/lib/util/domain-tree';
+import { DocumentImportError, saveProjectDocument } from '@/lib/services/document-import';
 
 // Replace the deprecated config export with the new export syntax
 export const dynamic = 'force-dynamic';
@@ -193,42 +188,11 @@ export async function POST(request, { params }) {
     // 直接从请求体中读取二进制数据
     const fileBuffer = Buffer.from(await request.arrayBuffer());
 
-    // 保存文件
-    const projectRoot = await getProjectRoot();
-    const projectPath = path.join(projectRoot, projectId);
-    const filesDir = path.join(projectPath, 'files');
-
-    await ensureDir(filesDir);
-
-    const filePath = path.join(filesDir, fileName);
-    await fs.writeFile(filePath, fileBuffer);
-    //获取文件大小
-    const stats = await fs.stat(filePath);
-    //获取文件md5
-    const md5 = await getFileMD5(filePath);
-    //获取文件扩展名
-    const ext = path.extname(filePath);
-
-    // let res = await checkUploadFileInfoByMD5(projectId, md5);
-    // if (res) {
-    //   return NextResponse.json({ error: `【${fileName}】该文件已在此项目中存在` }, { status: 400 });
-    // }
-
-    let fileInfo = await createUploadFileInfo({
-      projectId,
-      fileName,
-      size: stats.size,
-      md5,
-      fileExt: ext,
-      path: filesDir
-    });
+    const savedFile = await saveProjectDocument({ projectId, fileName, content: fileBuffer });
 
     console.log('The file upload process is complete, and a successful response is returned');
     return NextResponse.json({
-      message: 'File uploaded successfully',
-      fileName,
-      filePath,
-      fileId: fileInfo.id
+      ...savedFile
     });
   } catch (error) {
     console.error('Error processing file upload:', String(error));
@@ -237,7 +201,7 @@ export async function POST(request, { params }) {
       {
         error: 'File upload failed: ' + (error.message || 'Unknown error')
       },
-      { status: 500 }
+      { status: error instanceof DocumentImportError ? error.status : 500 }
     );
   }
 }

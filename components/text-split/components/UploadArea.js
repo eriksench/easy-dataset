@@ -9,13 +9,16 @@ import {
   ListItemText,
   Divider,
   CircularProgress,
-  Tooltip
+  Tooltip,
+  Chip
 } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
+import FileSourceDialog from './FileSourceDialog';
+import DepartmentFileDialog from './DepartmentFileDialog';
 
 export default function UploadArea({
   theme,
@@ -25,11 +28,15 @@ export default function UploadArea({
   onFileSelect,
   onRemoveFile,
   onUpload,
-  selectedModel
+  selectedModel,
+  onDepartmentFileSelect,
+  queuedDepartmentIds
 }) {
   const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef(null);
+  const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
+  const [departmentDialogOpen, setDepartmentDialogOpen] = useState(false);
 
   // 拖拽进入
   const handleDragOver = e => {
@@ -129,22 +136,26 @@ export default function UploadArea({
       >
         <span>
           <Button
-            component="label"
             variant="contained"
             startIcon={<UploadFileIcon />}
             sx={{ mb: 2, mt: 2 }}
             disabled={!selectedModel?.id || uploading}
+            onClick={() => setSourceDialogOpen(true)}
           >
             {t('textSplit.selectFile')}
-            <input
-              type="file"
-              hidden
-              accept=".md,.txt,.docx,.pdf,.epub"
-              multiple
-              onChange={onFileSelect}
-              disabled={!selectedModel?.id || uploading}
-            />
           </Button>
+          <input
+            ref={inputRef}
+            type="file"
+            hidden
+            accept=".md,.txt,.docx,.pdf,.epub"
+            multiple
+            onChange={event => {
+              onFileSelect(event);
+              event.target.value = '';
+            }}
+            disabled={!selectedModel?.id || uploading}
+          />
         </span>
       </Tooltip>
 
@@ -160,7 +171,7 @@ export default function UploadArea({
 
           <List sx={{ bgcolor: theme.palette.background.paper, borderRadius: 1, maxHeight: '200px', overflow: 'auto' }}>
             {files.map((file, index) => (
-              <Box key={index}>
+              <Box key={file.key || index}>
                 <ListItem
                   secondaryAction={
                     <Button
@@ -174,7 +185,27 @@ export default function UploadArea({
                     </Button>
                   }
                 >
-                  <ListItemText primary={file.name} secondary={`${(file.size / 1024).toFixed(2)} KB`} />
+                  <ListItemText
+                    primary={file.name}
+                    secondary={
+                      <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                        <Chip
+                          component="span"
+                          size="small"
+                          label={
+                            file.source === 'department'
+                              ? t('textSplit.fileSource.department', { defaultValue: '部门文件' })
+                              : t('textSplit.fileSource.local', { defaultValue: '本地文件' })
+                          }
+                        />
+                        <Typography component="span" variant="caption" color="text.secondary">
+                          {Number.isFinite(file.size)
+                            ? `${(file.size / 1024).toFixed(2)} KB`
+                            : t('textSplit.departmentFiles.unknownSize', { defaultValue: '大小未知' })}
+                        </Typography>
+                      </Box>
+                    }
+                  />
                 </ListItem>
                 {index < files.length - 1 && <Divider />}
               </Box>
@@ -202,6 +233,25 @@ export default function UploadArea({
           </Box>
         </Box>
       )}
+
+      <FileSourceDialog
+        open={sourceDialogOpen}
+        onClose={() => setSourceDialogOpen(false)}
+        onLocal={() => {
+          setSourceDialogOpen(false);
+          window.requestAnimationFrame(() => inputRef.current?.click());
+        }}
+        onDepartment={() => {
+          setSourceDialogOpen(false);
+          setDepartmentDialogOpen(true);
+        }}
+      />
+      <DepartmentFileDialog
+        open={departmentDialogOpen}
+        onClose={() => setDepartmentDialogOpen(false)}
+        onConfirm={onDepartmentFileSelect}
+        queuedIds={queuedDepartmentIds}
+      />
     </Box>
   );
 }
