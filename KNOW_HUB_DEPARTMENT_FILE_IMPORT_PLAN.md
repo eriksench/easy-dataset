@@ -1,5 +1,8 @@
 # Easy Dataset 与 Know Hub 部门文件联动方案
 
+> [!IMPORTANT]
+> 2026-09-22 更新：本文后续章节保留的是首版联动方案，其中“信息中心”和固定 bucket 的描述仅用于历史追溯，已不再代表当前实现。当前版本必须经 Know-Hub USB Key 登录，通过一次性 SSO 票据携带用户/部门身份；查询、下载和上传的部门均由受信任令牌决定，bucket 由 `minio_folder.department_id` 映射，已有文件仍通过 `folder_id -> minio_folder.folder_name` 解析。
+
 ## 1. 目标与范围
 
 本方案已于 2026-09-20 按推荐架构完成首版实现；本文同时保留设计依据、接口约定和验收标准，便于后续联调与扩展用户部门映射。

@@ -35,7 +35,7 @@ export default function DepartmentFileDialog({ open, onClose, onConfirm, queuedI
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [secretLevel, setSecretLevel] = useState('');
   const [page, setPage] = useState(1);
-  const [data, setData] = useState({ departmentName: '信息中心', total: 0, items: [] });
+  const [data, setData] = useState({ departmentName: '', maxSecretLevel: '公开', total: 0, items: [] });
   const [selected, setSelected] = useState(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -100,7 +100,7 @@ export default function DepartmentFileDialog({ open, onClose, onConfirm, queuedI
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {t('textSplit.departmentFiles.currentDepartment', {
             defaultValue: '当前部门：{{department}}',
-            department: data.departmentName || '信息中心'
+            department: data.departmentName || '-'
           })}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
@@ -125,11 +125,13 @@ export default function DepartmentFileDialog({ open, onClose, onConfirm, queuedI
               }}
             >
               <MenuItem value="">{t('common.all', { defaultValue: '全部' })}</MenuItem>
-              {['公开', '内部', '秘密', '机密'].map(level => (
+              {['公开', '内部', '秘密', '机密']
+                .slice(0, Math.max(1, ['公开', '内部', '秘密', '机密'].indexOf(data.maxSecretLevel) + 1))
+                .map(level => (
                 <MenuItem value={level} key={level}>
                   {level}
                 </MenuItem>
-              ))}
+                ))}
             </Select>
           </FormControl>
         </Box>

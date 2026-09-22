@@ -3,10 +3,13 @@ import { getProject } from '@/lib/db/projects';
 import { FILE } from '@/constant';
 import { downloadDepartmentFile } from '@/lib/integrations/know-hub';
 import { normalizeDocument, saveProjectDocument } from '@/lib/services/document-import';
+import { getSessionFromRequest } from '@/lib/auth/session';
 
 const MAX_FILES_PER_IMPORT = 20;
 
 export async function POST(request, { params }) {
+  const session = await getSessionFromRequest(request);
+  if (!session) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   const { projectId } = params;
   if (!projectId) {
     return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
@@ -45,7 +48,7 @@ export async function POST(request, { params }) {
   const failed = [];
   for (const sourceId of fileIds) {
     try {
-      const downloaded = await downloadDepartmentFile(sourceId);
+      const downloaded = await downloadDepartmentFile(sourceId, session.accessToken);
       if (downloaded.content.length > FILE.MAX_FILE_SIZE) {
         throw new Error(`File exceeds the ${FILE.MAX_FILE_SIZE / 1024 / 1024} MiB limit`);
       }

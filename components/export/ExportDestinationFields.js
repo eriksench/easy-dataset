@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
+
 import {
   Alert,
   Box,
@@ -18,12 +20,40 @@ import { DEPARTMENT_DESTINATION, LOCAL_DESTINATION } from '@/lib/export/artifact
 
 export function DepartmentMetadataFields({ metadata, onChange, suggestedFileName = '', suggestedTitle = '' }) {
   const { t } = useTranslation();
+  const [user, setUser] = useState(null);
   const update = field => event => onChange({ ...metadata, [field]: event.target.value });
+  const allowedSecretLevels = useMemo(() => {
+    const levels = ['公开', '内部', '秘密', '机密'];
+    const maximum = levels.indexOf(user?.maxSecretLevel);
+    return levels.slice(0, Math.max(1, maximum + 1));
+  }, [user]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then(response => (response.ok ? response.json() : null))
+      .then(data => {
+        if (active) setUser(data?.user || null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user && !allowedSecretLevels.includes(metadata.secretLevel)) {
+      onChange({ ...metadata, secretLevel: allowedSecretLevels.at(-1) || '公开' });
+    }
+  }, [user]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Alert severity="info">
-        {t('export.departmentFixedHint', { defaultValue: '将上传至信息中心部门文档库（testbucketname）' })}
+        {t('export.departmentFixedHint', {
+          defaultValue: '将上传至当前部门文档库：{{department}}',
+          department: user?.departmentName || '-'
+        })}
       </Alert>
       <TextField
         size="small"
@@ -51,7 +81,7 @@ export function DepartmentMetadataFields({ metadata, onChange, suggestedFileName
         onChange={update('secretLevel')}
         fullWidth
       >
-        {['公开', '内部', '秘密', '机密'].map(level => (
+        {allowedSecretLevels.map(level => (
           <MenuItem key={level} value={level}>
             {level}
           </MenuItem>

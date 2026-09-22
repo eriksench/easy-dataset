@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { searchDepartmentFiles, DEPARTMENT_NAME } from '@/lib/integrations/know-hub';
+import { searchDepartmentFiles } from '@/lib/integrations/know-hub';
 import { SUPPORTED_SOURCE_EXTENSIONS, normalizeExtension } from '@/lib/services/document-import';
+import { getSessionFromRequest } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,15 +13,18 @@ function positiveInteger(value, fallback, maximum) {
 
 export async function GET(request) {
   try {
+    const session = await getSessionFromRequest(request);
+    if (!session) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const { searchParams } = new URL(request.url);
     const pageNo = positiveInteger(searchParams.get('pageNo'), 1, 100000);
     const pageSize = positiveInteger(searchParams.get('pageSize'), 10, 50);
     const fileName = searchParams.get('fileName') || '';
     const secretLevel = searchParams.get('secretLevel') || '';
-    const data = await searchDepartmentFiles({ fileName, secretLevel, pageNo, pageSize });
+    const data = await searchDepartmentFiles({ fileName, secretLevel, pageNo, pageSize, accessToken: session.accessToken });
 
     return NextResponse.json({
-      departmentName: DEPARTMENT_NAME,
+      departmentName: session.user.departmentName,
+      maxSecretLevel: session.user.maxSecretLevel,
       total: Number(data.allNo) || 0,
       items: (data.content || [])
         .filter(item => item.id != null && String(item.id).trim())

@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { uploadDepartmentFile } from '@/lib/integrations/know-hub';
+import { getSessionFromRequest } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request) {
   try {
+    const session = await getSessionFromRequest(request);
+    if (!session) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const formData = await request.formData();
     const file = formData.get('file');
     const metadataValue = formData.get('metadata');
@@ -26,7 +29,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'File title, secret level and artifact type are required' }, { status: 400 });
     }
 
-    const result = await uploadDepartmentFile(file, metadata);
+    const result = await uploadDepartmentFile(file, metadata, session.accessToken);
     return NextResponse.json(result);
   } catch (error) {
     console.error('Failed to upload artifact to Know Hub:', String(error));
