@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { deliverArtifact, departmentUploadSuccessMessage } from '@/lib/export/artifact-delivery';
 
 /**
  * Multi-turn dataset data hook
@@ -96,7 +97,7 @@ export const useMultiTurnData = projectId => {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async deliveryOptions => {
     try {
       setExportLoading(true);
       const response = await fetch(`/api/projects/${projectId}/dataset-conversations/export`);
@@ -108,19 +109,27 @@ export const useMultiTurnData = projectId => {
       const data = await response.json();
       const dataStr = JSON.stringify(data, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `multi-turn-conversations-${projectId}-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const fileName = `multi-turn-conversations-${projectId}-${new Date().toISOString().slice(0, 10)}.json`;
+      const deliveryResult = await deliverArtifact({
+        blob: dataBlob,
+        fileName,
+        projectId,
+        artifactType: 'multi-turn-conversations',
+        defaultTitle: 'Easy Dataset 多轮对话数据集',
+        destination: deliveryOptions?.destination,
+        departmentMetadata: deliveryOptions?.departmentMetadata
+      });
 
-      toast.success(t('datasets.exportSuccess'));
+      toast.success(
+        deliveryOptions?.destination === 'department'
+          ? departmentUploadSuccessMessage(deliveryResult)
+          : t('datasets.exportSuccess')
+      );
+      return true;
     } catch (error) {
       console.error('Export failed:', error);
       toast.error(error.message || t('datasets.exportFailed'));
+      return false;
     } finally {
       setExportLoading(false);
     }

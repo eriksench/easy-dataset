@@ -3,6 +3,11 @@
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import axios from 'axios';
+import {
+  deliverArtifact,
+  departmentUploadSuccessMessage,
+  mimeTypeForExtension
+} from '@/lib/export/artifact-delivery';
 
 const useDatasetExport = projectId => {
   const { t } = useTranslation();
@@ -15,6 +20,7 @@ const useDatasetExport = projectId => {
       let hasMore = true;
       let totalProcessed = 0;
       let isFirstBatch = true;
+      let deliveryResult;
 
       // 确定文件格式
       const fileFormat = exportOptions.fileFormat || 'json';
@@ -38,7 +44,7 @@ const useDatasetExport = projectId => {
 
       try {
         // 使用 showSaveFilePicker API（现代浏览器）
-        if (window.showSaveFilePicker) {
+        if (exportOptions.destination !== 'department' && window.showSaveFilePicker) {
           const handle = await window.showSaveFilePicker({
             suggestedName: fileName,
             types: [
@@ -213,12 +219,28 @@ const useDatasetExport = projectId => {
         }
       }
 
-      // 如果使用内存缓冲方案，现在触发下载
+      // 如果使用内存缓冲方案，现在投递到所选目标
       if (!fileStream) {
-        downloadFromChunks(chunks, fileName);
+        if (exportOptions.destination === 'department') {
+          deliveryResult = await deliverArtifact({
+            blob: new Blob(chunks, { type: mimeTypeForExtension(fileFormat) }),
+            fileName,
+            projectId,
+            artifactType: 'training-dataset',
+            defaultTitle: 'Easy Dataset 训练数据集',
+            destination: exportOptions.destination,
+            departmentMetadata: exportOptions.departmentMetadata
+          });
+        } else {
+          downloadFromChunks(chunks, fileName);
+        }
       }
 
-      toast.success(t('datasets.exportSuccess'));
+      toast.success(
+        exportOptions.destination === 'department'
+          ? departmentUploadSuccessMessage(deliveryResult)
+          : t('datasets.exportSuccess')
+      );
       return true;
     } catch (error) {
       console.error('Streaming export failed:', error);
@@ -414,11 +436,6 @@ const useDatasetExport = projectId => {
       fileExtension = 'json';
     }
 
-    const blob = new Blob([content], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-
     const formatSuffixMap = {
       alpaca: 'alpaca',
       multilingualthinking: 'multilingual-thinking',
@@ -428,12 +445,17 @@ const useDatasetExport = projectId => {
     const formatSuffix = formatSuffixMap[exportOptions.formatType] || exportOptions.formatType || 'export';
     const balanceSuffix = exportOptions.balanceMode ? '-balanced' : '';
     const dateStr = new Date().toISOString().slice(0, 10);
-    a.download = `datasets-${projectId}-${formatSuffix}${balanceSuffix}-${dateStr}.${fileExtension}`;
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const fileName = `datasets-${projectId}-${formatSuffix}${balanceSuffix}-${dateStr}.${fileExtension}`;
+    const blob = new Blob([content], { type: mimeTypeForExtension(fileExtension) });
+    return deliverArtifact({
+      blob,
+      fileName,
+      projectId,
+      artifactType: 'training-dataset',
+      defaultTitle: 'Easy Dataset 训练数据集',
+      destination: exportOptions.destination,
+      departmentMetadata: exportOptions.departmentMetadata
+    });
   };
 
   // 导出数据集（保持向后兼容的原有功能）
@@ -456,9 +478,13 @@ const useDatasetExport = projectId => {
       const response = await axios.post(apiUrl, requestBody);
       let dataToExport = response.data;
 
-      await processAndDownloadData(dataToExport, exportOptions);
+      const deliveryResult = await processAndDownloadData(dataToExport, exportOptions);
 
-      toast.success(t('datasets.exportSuccess'));
+      toast.success(
+        exportOptions.destination === 'department'
+          ? departmentUploadSuccessMessage(deliveryResult)
+          : t('datasets.exportSuccess')
+      );
       return true;
     } catch (error) {
       toast.error(error.message);

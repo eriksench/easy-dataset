@@ -3,6 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { deliverArtifact, departmentUploadSuccessMessage } from '@/lib/export/artifact-delivery';
 
 const useImageDatasetExport = projectId => {
   const { t } = useTranslation();
@@ -138,21 +139,25 @@ const useImageDatasetExport = projectId => {
 
       // 4. 生成 JSON 文件
       const jsonContent = JSON.stringify(formattedData, null, 2);
-      const blob = new Blob([jsonContent], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-
       const formatSuffix = exportOptions.formatType;
       const dateStr = new Date().toISOString().slice(0, 10);
-      a.download = `image-datasets-${projectId}-${formatSuffix}-${dateStr}.json`;
+      const jsonFileName = `image-datasets-${projectId}-${formatSuffix}-${dateStr}.json`;
+      const blob = new Blob([jsonContent], { type: 'application/json' });
+      const jsonDeliveryResult = await deliverArtifact({
+        blob,
+        fileName: jsonFileName,
+        projectId,
+        artifactType: 'image-dataset-json',
+        defaultTitle: 'Easy Dataset 图片数据集',
+        destination: exportOptions.destination,
+        departmentMetadata: exportOptions.departmentMetadata
+      });
 
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast.success(t('imageDatasets.exportSuccess', '数据集导出成功'));
+      toast.success(
+        exportOptions.destination === 'department'
+          ? departmentUploadSuccessMessage(jsonDeliveryResult)
+          : t('imageDatasets.exportSuccess', '数据集导出成功')
+      );
 
       // 5. 如果需要导出图片，调用压缩包接口
       if (exportOptions.exportImages) {
@@ -163,16 +168,42 @@ const useImageDatasetExport = projectId => {
 
           const zipUrl = `/api/projects/${projectId}/image-datasets/export-zip?${params.toString()}`;
 
-          // 创建一个隐藏的 a 标签来触发下载
-          const a = document.createElement('a');
-          a.href = zipUrl;
-          a.style.display = 'none';
-          a.target = '_blank';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          if (exportOptions.destination === 'department') {
+            const zipResponse = await fetch(zipUrl);
+            if (!zipResponse.ok) {
+              const errorResult = await zipResponse.json().catch(() => ({}));
+              throw new Error(errorResult.error || '图片压缩包生成失败');
+            }
+            const zipBlob = await zipResponse.blob();
+            const sourceMetadata = exportOptions.departmentMetadata || {};
+            const customBaseName = sourceMetadata.fileName?.replace(/\.[^.]+$/, '');
+            const zipDeliveryResult = await deliverArtifact({
+              blob: zipBlob,
+              fileName: `images-${projectId}-${dateStr}.zip`,
+              projectId,
+              artifactType: 'image-dataset-images',
+              defaultTitle: 'Easy Dataset 图片数据集 - 图片包',
+              destination: exportOptions.destination,
+              departmentMetadata: {
+                ...sourceMetadata,
+                fileName: customBaseName ? `${customBaseName}-images.zip` : '',
+                fileTitle: sourceMetadata.fileTitle ? `${sourceMetadata.fileTitle} - 图片包` : ''
+              }
+            });
+            toast.success(departmentUploadSuccessMessage(zipDeliveryResult));
+          } else {
+            const a = document.createElement('a');
+            a.href = zipUrl;
+            a.style.display = 'none';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
 
-          toast.success(t('imageDatasets.exportImagesSuccess', '图片压缩包导出成功'));
+          if (exportOptions.destination !== 'department') {
+            toast.success(t('imageDatasets.exportImagesSuccess', '图片压缩包导出成功'));
+          }
         } catch (error) {
           console.error('Failed to export images:', error);
           toast.error(t('imageDatasets.exportImagesFailed', '图片导出失败'));

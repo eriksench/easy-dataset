@@ -187,6 +187,7 @@ export default function ImageDatasetsPage() {
         open={exportDialogOpen}
         onClose={() => setExportDialogOpen(false)}
         onExport={handleExport}
+        projectId={projectId}
       />
     </Container>
   );

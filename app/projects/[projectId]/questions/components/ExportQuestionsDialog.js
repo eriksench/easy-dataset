@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,16 +17,32 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import DownloadIcon from '@mui/icons-material/Download';
+import ExportDestinationFields from '@/components/export/ExportDestinationFields';
+import { createDepartmentMetadata, LOCAL_DESTINATION } from '@/lib/export/artifact-delivery';
 
-export default function ExportQuestionsDialog({ open, onClose, onExport, selectedCount, totalCount }) {
+export default function ExportQuestionsDialog({ open, onClose, onExport, selectedCount, totalCount, projectId }) {
   const { t } = useTranslation();
   const [format, setFormat] = useState('json');
   const [exportScope, setExportScope] = useState('all');
+  const [destination, setDestination] = useState(LOCAL_DESTINATION);
+  const [departmentMetadata, setDepartmentMetadata] = useState(
+    createDepartmentMetadata({ fileTitle: 'Easy Dataset 问题集' })
+  );
+
+  useEffect(() => {
+    if (open) {
+      setDestination(LOCAL_DESTINATION);
+      setDepartmentMetadata(createDepartmentMetadata({ fileTitle: 'Easy Dataset 问题集' }));
+    }
+  }, [open]);
 
   const handleExport = () => {
     const exportOptions = {
       format,
-      selectedIds: exportScope === 'selected' ? [] : undefined
+      exportScope,
+      selectedIds: exportScope === 'selected' ? [] : undefined,
+      destination,
+      departmentMetadata
     };
 
     onExport(exportOptions);
@@ -69,6 +85,15 @@ export default function ExportQuestionsDialog({ open, onClose, onExport, selecte
               <FormControlLabel value="csv" control={<Radio />} label="CSV" />
             </RadioGroup>
           </FormControl>
+
+          <ExportDestinationFields
+            destination={destination}
+            onDestinationChange={setDestination}
+            metadata={departmentMetadata}
+            onMetadataChange={setDepartmentMetadata}
+            suggestedFileName={`questions-${projectId}-${new Date().toISOString().slice(0, 10)}.${format}`}
+            suggestedTitle="Easy Dataset 问题集"
+          />
         </Box>
       </DialogContent>
       <DialogActions>

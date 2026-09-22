@@ -1,5 +1,5 @@
 // ExportDatasetDialog.js 组件
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Tabs, Tab } from '@mui/material';
 
@@ -7,6 +7,8 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Tabs, T
 import LocalExportTab from './export/LocalExportTab';
 import LlamaFactoryTab from './export/LlamaFactoryTab';
 import HuggingFaceTab from './export/HuggingFaceTab';
+import { DepartmentMetadataFields } from './export/ExportDestinationFields';
+import { createDepartmentMetadata } from '@/lib/export/artifact-delivery';
 
 const ExportDatasetDialog = ({ open, onClose, onExport, projectId }) => {
   const { t } = useTranslation();
@@ -17,6 +19,16 @@ const ExportDatasetDialog = ({ open, onClose, onExport, projectId }) => {
   const [fileFormat, setFileFormat] = useState('json');
   const [includeCOT, setIncludeCOT] = useState(true);
   const [currentTab, setCurrentTab] = useState(0);
+  const [departmentMetadata, setDepartmentMetadata] = useState(
+    createDepartmentMetadata({ fileTitle: 'Easy Dataset 训练数据集' })
+  );
+
+  useEffect(() => {
+    if (open) {
+      setCurrentTab(0);
+      setDepartmentMetadata(createDepartmentMetadata({ fileTitle: 'Easy Dataset 训练数据集' }));
+    }
+  }, [open]);
   // alpaca 格式特有的设置
   const [alpacaFieldType, setAlpacaFieldType] = useState('instruction'); // 'instruction' 或 'input'
   const [customInstruction, setCustomInstruction] = useState(''); // 当选择 input 时使用的自定义 instruction
@@ -114,9 +126,13 @@ const ExportDatasetDialog = ({ open, onClose, onExport, projectId }) => {
   };
 
   const handleExport = options => {
+    const deliveryOptions = {
+      destination: currentTab === 3 ? 'department' : 'local',
+      departmentMetadata: currentTab === 3 ? departmentMetadata : undefined
+    };
     // 如果 LocalExportTab 传入了完整的导出配置（例如平衡导出），直接使用该配置
     if (options && typeof options === 'object' && options.balanceMode) {
-      onExport(options);
+      onExport({ ...options, ...deliveryOptions });
       return;
     }
 
@@ -130,7 +146,8 @@ const ExportDatasetDialog = ({ open, onClose, onExport, projectId }) => {
       includeCOT,
       alpacaFieldType, // 添加 alpaca 字段类型
       customInstruction, // 添加自定义 instruction
-      customFields: formatType === 'custom' ? customFields : undefined
+      customFields: formatType === 'custom' ? customFields : undefined,
+      ...deliveryOptions
     });
   };
 
@@ -153,6 +170,7 @@ const ExportDatasetDialog = ({ open, onClose, onExport, projectId }) => {
             <Tab label={t('export.localTab')} />
             <Tab label={t('export.llamaFactoryTab')} />
             <Tab label={t('export.huggingFaceTab')} />
+            <Tab label={t('export.uploadDepartment', { defaultValue: '部门文档库' })} />
           </Tabs>
         </Box>
 
@@ -217,6 +235,44 @@ const ExportDatasetDialog = ({ open, onClose, onExport, projectId }) => {
             handleConfirmedOnlyChange={handleConfirmedOnlyChange}
             handleIncludeCOTChange={handleIncludeCOTChange}
           />
+        )}
+
+        {currentTab === 3 && (
+          <>
+            <DepartmentMetadataFields
+              metadata={departmentMetadata}
+              onChange={setDepartmentMetadata}
+              suggestedFileName={`datasets-${projectId}-${formatType}-${new Date().toISOString().slice(0, 10)}.${fileFormat}`}
+              suggestedTitle="Easy Dataset 训练数据集"
+            />
+            <Box sx={{ mt: 3 }}>
+              <LocalExportTab
+                fileFormat={fileFormat}
+                formatType={formatType}
+                systemPrompt={systemPrompt}
+                reasoningLanguage={reasoningLanguage}
+                confirmedOnly={confirmedOnly}
+                includeCOT={includeCOT}
+                customFields={customFields}
+                alpacaFieldType={alpacaFieldType}
+                customInstruction={customInstruction}
+                handleFileFormatChange={handleFileFormatChange}
+                handleFormatChange={handleFormatChange}
+                handleSystemPromptChange={handleSystemPromptChange}
+                handleReasoningLanguageChange={handleReasoningLanguageChange}
+                handleConfirmedOnlyChange={handleConfirmedOnlyChange}
+                handleIncludeCOTChange={handleIncludeCOTChange}
+                handleCustomFieldChange={handleCustomFieldChange}
+                handleIncludeLabelsChange={handleIncludeLabelsChange}
+                handleIncludeChunkChange={handleIncludeChunkChange}
+                handleQuestionOnlyChange={handleQuestionOnlyChange}
+                handleAlpacaFieldTypeChange={handleAlpacaFieldTypeChange}
+                handleCustomInstructionChange={handleCustomInstructionChange}
+                handleExport={handleExport}
+                projectId={projectId}
+              />
+            </Box>
+          </>
         )}
       </DialogContent>
     </Dialog>

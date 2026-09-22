@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog,
@@ -19,14 +19,27 @@ import {
   Typography,
   Alert
 } from '@mui/material';
+import ExportDestinationFields from '@/components/export/ExportDestinationFields';
+import { createDepartmentMetadata, LOCAL_DESTINATION } from '@/lib/export/artifact-delivery';
 
-const ExportImageDatasetDialog = ({ open, onClose, onExport }) => {
+const ExportImageDatasetDialog = ({ open, onClose, onExport, projectId }) => {
   const { t } = useTranslation();
   const [formatType, setFormatType] = useState('raw');
   const [exportImages, setExportImages] = useState(false);
   const [includeImagePath, setIncludeImagePath] = useState(true);
   const [systemPrompt, setSystemPrompt] = useState('');
   const [confirmedOnly, setConfirmedOnly] = useState(false);
+  const [destination, setDestination] = useState(LOCAL_DESTINATION);
+  const [departmentMetadata, setDepartmentMetadata] = useState(
+    createDepartmentMetadata({ fileTitle: 'Easy Dataset 图片数据集' })
+  );
+
+  useEffect(() => {
+    if (open) {
+      setDestination(LOCAL_DESTINATION);
+      setDepartmentMetadata(createDepartmentMetadata({ fileTitle: 'Easy Dataset 图片数据集' }));
+    }
+  }, [open]);
 
   const handleExport = () => {
     onExport({
@@ -34,7 +47,9 @@ const ExportImageDatasetDialog = ({ open, onClose, onExport }) => {
       exportImages,
       includeImagePath,
       systemPrompt,
-      confirmedOnly
+      confirmedOnly,
+      destination,
+      departmentMetadata
     });
   };
 
@@ -110,6 +125,15 @@ const ExportImageDatasetDialog = ({ open, onClose, onExport }) => {
           <Alert severity="info" sx={{ mt: 1 }}>
             {t('imageDatasets.exportTip', '标签格式的答案将自动解析为文本（逗号分隔）')}
           </Alert>
+
+          <ExportDestinationFields
+            destination={destination}
+            onDestinationChange={setDestination}
+            metadata={departmentMetadata}
+            onMetadataChange={setDepartmentMetadata}
+            suggestedFileName={`image-datasets-${projectId}-${formatType}-${new Date().toISOString().slice(0, 10)}.json`}
+            suggestedTitle="Easy Dataset 图片数据集"
+          />
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

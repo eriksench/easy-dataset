@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import ChunkFilterDialog from './ChunkFilterDialog';
+import ArtifactDestinationDialog from '@/components/export/ArtifactDestinationDialog';
+import { deliverArtifact, departmentUploadSuccessMessage } from '@/lib/export/artifact-delivery';
 
 export default function ChunkListHeader({
   projectId,
@@ -40,6 +42,7 @@ export default function ChunkListHeader({
 
   // 添加筛选对话框状态
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // 自动任务菜单状态
   const [autoTasksMenuAnchorEl, setAutoTasksMenuAnchorEl] = useState(null);
@@ -78,7 +81,7 @@ export default function ChunkListHeader({
   // 处理导出文本块，关闭菜单并调用原有函数
   const handleExport = () => {
     handleMoreMenuClose();
-    handleExportChunks();
+    setExportDialogOpen(true);
   };
 
   // 创建自动提取问题任务
@@ -169,8 +172,8 @@ export default function ChunkListHeader({
   };
 
   // 导出文本块为JSON文件的函数
-  const handleExportChunks = () => {
-    if (!chunks || chunks.length === 0) return;
+  const handleExportChunks = async deliveryOptions => {
+    if (!chunks || chunks.length === 0) return false;
 
     // 创建要导出的数据对象
     const exportData = chunks.map(chunk => ({
@@ -185,22 +188,28 @@ export default function ChunkListHeader({
     // 将数据转换为JSON字符串
     const jsonString = JSON.stringify(exportData, null, 2);
 
-    // 创建Blob对象
     const blob = new Blob([jsonString], { type: 'application/json' });
-
-    // 创建下载链接
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `text-chunks-export-${new Date().toISOString().split('T')[0]}.json`;
-
-    // 触发下载
-    document.body.appendChild(a);
-    a.click();
-
-    // 清理
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const fileName = `text-chunks-export-${new Date().toISOString().split('T')[0]}.json`;
+    try {
+      const deliveryResult = await deliverArtifact({
+        blob,
+        fileName,
+        projectId,
+        artifactType: 'text-chunks',
+        defaultTitle: 'Easy Dataset 文本分块',
+        destination: deliveryOptions?.destination,
+        departmentMetadata: deliveryOptions?.departmentMetadata
+      });
+      toast.success(
+        deliveryOptions?.destination === 'department'
+          ? departmentUploadSuccessMessage(deliveryResult)
+          : t('textSplit.exportSuccess', { defaultValue: '文本块导出成功' })
+      );
+      return true;
+    } catch (error) {
+      toast.error(error.message || t('datasets.exportFailed', { defaultValue: '导出失败' }));
+      return false;
+    }
   };
 
   return (
@@ -395,6 +404,14 @@ export default function ChunkListHeader({
 
       {/* 筛选对话框 */}
       <ChunkFilterDialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} onApply={onFilterChange} />
+      <ArtifactDestinationDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        onConfirm={handleExportChunks}
+        title={t('textSplit.exportChunks', { defaultValue: '导出文本块' })}
+        suggestedFileName={`text-chunks-export-${new Date().toISOString().split('T')[0]}.json`}
+        suggestedTitle="Easy Dataset 文本分块"
+      />
     </Box>
   );
 }

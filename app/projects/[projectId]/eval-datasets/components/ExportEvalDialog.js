@@ -29,6 +29,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useTranslation } from 'react-i18next';
+import ExportDestinationFields from '@/components/export/ExportDestinationFields';
 
 const QUESTION_TYPES = [
   { value: 'true_false', labelKey: 'eval.questionTypes.true_false' },
@@ -57,6 +58,11 @@ export default function ExportEvalDialog({
   setSelectedTags,
   keyword,
   setKeyword,
+  destination,
+  setDestination,
+  departmentMetadata,
+  setDepartmentMetadata,
+  projectId,
   previewTotal,
   previewLoading,
   availableTags,
@@ -239,6 +245,15 @@ export default function ExportEvalDialog({
             {t('evalDatasets.export.largeDataHint', '数据量较大，将采用流式导出，请耐心等待')}
           </Alert>
         )}
+
+        <ExportDestinationFields
+          destination={destination}
+          onDestinationChange={setDestination}
+          metadata={departmentMetadata}
+          onMetadataChange={setDepartmentMetadata}
+          suggestedFileName={`eval-datasets-${projectId}-${new Date().toISOString().slice(0, 10)}.${format}`}
+          suggestedTitle="Easy Dataset 评估数据集"
+        />
       </DialogContent>
 
       <DialogActions sx={{ p: 2 }}>

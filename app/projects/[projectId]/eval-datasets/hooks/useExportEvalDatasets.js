@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import {
+  createDepartmentMetadata,
+  deliverArtifact,
+  departmentUploadSuccessMessage,
+  LOCAL_DESTINATION
+} from '@/lib/export/artifact-delivery';
+import { toast } from 'sonner';
 
 /**
  * 评估数据集导出 Hook
@@ -17,6 +24,10 @@ export default function useExportEvalDatasets(projectId, stats = {}) {
   const [questionTypes, setQuestionTypes] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [keyword, setKeyword] = useState('');
+  const [destination, setDestination] = useState(LOCAL_DESTINATION);
+  const [departmentMetadata, setDepartmentMetadata] = useState(
+    createDepartmentMetadata({ fileTitle: 'Easy Dataset 评估数据集' })
+  );
 
   // 预览数据
   const [previewTotal, setPreviewTotal] = useState(0);
@@ -85,6 +96,8 @@ export default function useExportEvalDatasets(projectId, stats = {}) {
     setQuestionTypes([]);
     setSelectedTags([]);
     setKeyword('');
+    setDestination(LOCAL_DESTINATION);
+    setDepartmentMetadata(createDepartmentMetadata({ fileTitle: 'Easy Dataset 评估数据集' }));
     setError('');
   }, [exporting]);
 
@@ -132,16 +145,19 @@ export default function useExportEvalDatasets(projectId, stats = {}) {
         }
       }
 
-      // 下载文件
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const deliveryResult = await deliverArtifact({
+        blob,
+        fileName: filename,
+        projectId,
+        artifactType: 'eval-datasets',
+        defaultTitle: 'Easy Dataset 评估数据集',
+        destination,
+        departmentMetadata
+      });
+      toast.success(
+        destination === 'department' ? departmentUploadSuccessMessage(deliveryResult) : '评估数据集导出成功'
+      );
 
       // 导出成功，关闭对话框
       closeDialog();
@@ -154,7 +170,17 @@ export default function useExportEvalDatasets(projectId, stats = {}) {
     } finally {
       setExporting(false);
     }
-  }, [projectId, format, questionTypes, selectedTags, keyword, previewTotal, closeDialog]);
+  }, [
+    projectId,
+    format,
+    questionTypes,
+    selectedTags,
+    keyword,
+    previewTotal,
+    closeDialog,
+    destination,
+    departmentMetadata
+  ]);
 
   return {
     // 对话框状态
@@ -176,6 +202,10 @@ export default function useExportEvalDatasets(projectId, stats = {}) {
     setSelectedTags,
     keyword,
     setKeyword,
+    destination,
+    setDestination,
+    departmentMetadata,
+    setDepartmentMetadata,
 
     // 预览数据
     previewTotal,

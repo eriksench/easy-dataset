@@ -3,17 +3,20 @@
 import { Container, Typography, Box, Card, useTheme, alpha } from '@mui/material';
 import { Chat as ChatIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 
 // 导入拆分后的组件
 import SearchBar from './components/SearchBar';
 import ConversationTable from './components/ConversationTable';
 import FilterDialog from './components/FilterDialog';
 import { useMultiTurnData } from './hooks/useMultiTurnData';
+import ArtifactDestinationDialog from '@/components/export/ArtifactDestinationDialog';
 
 export default function MultiTurnDatasetPage({ params }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const { projectId } = params;
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // 使用自定义Hook管理状态和逻辑
   const {
@@ -69,7 +72,7 @@ export default function MultiTurnDatasetPage({ params }) {
           onSearchChange={setSearchKeyword}
           onSearch={handleSearch}
           onFilterClick={() => setFilterDialogOpen(true)}
-          onExportClick={handleExport}
+          onExportClick={() => setExportDialogOpen(true)}
           exportLoading={exportLoading}
           selectedCount={isAllSelected ? total : selectedIds.length}
           onBatchDelete={handleBatchDelete}
@@ -100,6 +103,15 @@ export default function MultiTurnDatasetPage({ params }) {
         onFiltersChange={setFilters}
         onReset={resetFilters}
         onApply={applyFilters}
+      />
+
+      <ArtifactDestinationDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        onConfirm={handleExport}
+        title={t('exportDialog.export', { defaultValue: '导出多轮对话数据集' })}
+        suggestedFileName={`multi-turn-conversations-${projectId}-${new Date().toISOString().slice(0, 10)}.json`}
+        suggestedTitle="Easy Dataset 多轮对话数据集"
       />
     </Container>
   );

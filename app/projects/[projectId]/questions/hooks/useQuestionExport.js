@@ -3,6 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { deliverArtifact, departmentUploadSuccessMessage } from '@/lib/export/artifact-delivery';
 
 const useQuestionExport = projectId => {
   const { t } = useTranslation();
@@ -28,10 +29,14 @@ const useQuestionExport = projectId => {
       const response = await axios.post(apiUrl, requestBody);
       const questions = response.data;
 
-      // 处理和下载数据
-      await processAndDownloadData(questions, exportOptions);
+      // 处理并投递数据
+      const deliveryResult = await processAndDownloadData(questions, exportOptions);
 
-      toast.success(t('questions.exportSuccess'));
+      toast.success(
+        exportOptions.destination === 'department'
+          ? departmentUploadSuccessMessage(deliveryResult)
+          : t('questions.exportSuccess')
+      );
       return true;
     } catch (error) {
       console.error('Export failed:', error);
@@ -94,16 +99,16 @@ const useQuestionExport = projectId => {
         mimeType = 'application/json';
     }
 
-    // 创建下载链接
     const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    return deliverArtifact({
+      blob,
+      fileName: filename,
+      projectId,
+      artifactType: 'questions',
+      defaultTitle: 'Easy Dataset 问题集',
+      destination: exportOptions.destination,
+      departmentMetadata: exportOptions.departmentMetadata
+    });
   };
 
   return {

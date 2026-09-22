@@ -45,6 +45,8 @@ import GaPairsIndicator from '../../mga/GaPairsIndicator';
 import DomainTreeActionDialog from './DomainTreeActionDialog';
 import i18n from '@/lib/i18n';
 import { toast } from 'sonner';
+import ArtifactDestinationDialog from '@/components/export/ArtifactDestinationDialog';
+import { deliverArtifact, departmentUploadSuccessMessage } from '@/lib/export/artifact-delivery';
 
 export default function FileList({
   theme,
@@ -65,6 +67,7 @@ export default function FileList({
   const [array, setArray] = useState([]);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [viewContent, setViewContent] = useState('');
+  const [downloadTarget, setDownloadTarget] = useState(null);
 
   // 新增的批量生成GA对相关状态
   const [batchGenDialogOpen, setBatchGenDialogOpen] = useState(false);
@@ -201,29 +204,49 @@ export default function FileList({
   };
 
   const handleDownload = async (fileId, fileName) => {
+    setDownloadTarget({ fileId, fileName });
+  };
+
+  const deliverProcessedFile = async deliveryOptions => {
+    if (!downloadTarget) return false;
+
     setPageLoading(true);
-    const text = await getFileContent(fileId);
+    try {
+      const text = await getFileContent(downloadTarget.fileId);
+      if (!text?.content) {
+        throw new Error(t('textSplit.fetchChunksFailed'));
+      }
 
-    // Modify the filename if it ends with .pdf
-    let downloadName = fileName || 'download.txt';
-    if (downloadName.toLowerCase().endsWith('.pdf')) {
-      downloadName = downloadName.slice(0, -4) + '.md';
+      let downloadName = downloadTarget.fileName || 'download.txt';
+      if (downloadName.toLowerCase().endsWith('.pdf')) {
+        downloadName = downloadName.slice(0, -4) + '.md';
+      }
+
+      const mimeType = downloadName.toLowerCase().endsWith('.md') ? 'text/markdown' : 'text/plain';
+      const blob = new Blob([text.content], { type: `${mimeType};charset=utf-8` });
+      const deliveryResult = await deliverArtifact({
+        blob,
+        fileName: downloadName,
+        projectId,
+        artifactType: 'processed-document',
+        defaultTitle: `Easy Dataset 处理结果 - ${downloadName}`,
+        destination: deliveryOptions?.destination,
+        departmentMetadata: deliveryOptions?.departmentMetadata
+      });
+
+      toast.success(
+        deliveryOptions?.destination === 'department'
+          ? departmentUploadSuccessMessage(deliveryResult)
+          : t('textSplit.downloadSuccess', { defaultValue: '文件下载成功' })
+      );
+      setDownloadTarget(null);
+      return true;
+    } catch (error) {
+      toast.error(error.message || t('datasets.exportFailed', { defaultValue: '导出失败' }));
+      return false;
+    } finally {
+      setPageLoading(false);
     }
-
-    const blob = new Blob([text.content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = downloadName;
-
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    setPageLoading(false);
   };
 
   const getFileContent = async fileId => {
@@ -868,6 +891,19 @@ export default function FileList({
         onClose={handleCloseViewDialog}
         projectId={projectId}
         onSaveSuccess={refreshTextChunks}
+      />
+
+      <ArtifactDestinationDialog
+        open={Boolean(downloadTarget)}
+        onClose={() => setDownloadTarget(null)}
+        onConfirm={deliverProcessedFile}
+        title={t('textSplit.download', { defaultValue: '导出处理结果' })}
+        suggestedFileName={
+          downloadTarget?.fileName?.toLowerCase().endsWith('.pdf')
+            ? `${downloadTarget.fileName.slice(0, -4)}.md`
+            : downloadTarget?.fileName || 'download.txt'
+        }
+        suggestedTitle={`Easy Dataset 处理结果 - ${downloadTarget?.fileName || ''}`}
       />
 
       {/* 新增：批量生成GA对对话框 */}

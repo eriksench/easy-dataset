@@ -74,6 +74,10 @@ export default function EvalDatasetsPage() {
     setSelectedTags: setExportSelectedTags,
     keyword: exportKeyword,
     setKeyword: setExportKeyword,
+    destination: exportDestination,
+    setDestination: setExportDestination,
+    departmentMetadata: exportDepartmentMetadata,
+    setDepartmentMetadata: setExportDepartmentMetadata,
     previewTotal,
     previewLoading,
     availableTags: exportAvailableTags,
@@ -299,6 +303,11 @@ export default function EvalDatasetsPage() {
         setSelectedTags={setExportSelectedTags}
         keyword={exportKeyword}
         setKeyword={setExportKeyword}
+        destination={exportDestination}
+        setDestination={setExportDestination}
+        departmentMetadata={exportDepartmentMetadata}
+        setDepartmentMetadata={setExportDepartmentMetadata}
+        projectId={projectId}
         previewTotal={previewTotal}
         previewLoading={previewLoading}
         availableTags={exportAvailableTags}

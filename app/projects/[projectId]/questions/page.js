@@ -198,7 +198,7 @@ export default function QuestionsPage({ params }) {
   const handleExportQuestions = async exportOptions => {
     const options = {
       ...exportOptions,
-      selectedIds: selectedQuestions,
+      selectedIds: exportOptions.exportScope === 'selected' ? selectedQuestions : undefined,
       filters: {
         searchTerm: debouncedSearchTerm,
         chunkName: debouncedChunkNameFilter,
@@ -410,6 +410,7 @@ export default function QuestionsPage({ params }) {
         onExport={handleExportQuestions}
         selectedCount={selectedQuestions.length}
         totalCount={questions.total || 0}
+        projectId={projectId}
       />
     </Container>
   );
