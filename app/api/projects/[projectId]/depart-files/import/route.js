@@ -65,4 +65,7 @@ async function POSTHandler(request, { params }) {
   return NextResponse.json({ succeeded, failed });
 }
 
-export const POST = withProjectAccess(POSTHandler);
+// fileIds here are know-hub department file IDs, not easy-dataset UploadFiles IDs.
+export const POST = withProjectAccess(POSTHandler, {
+  bodyResourceModelOverrides: { fileIds: null }
+});
