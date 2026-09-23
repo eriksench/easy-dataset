@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getQuestionsForTree, getQuestionsByTag } from '@/lib/db/questions';
 
@@ -7,7 +8,7 @@ import { getQuestionsForTree, getQuestionsByTag } from '@/lib/db/questions';
  * @param {Object} params - 路由参数
  * @returns {Promise<Response>} - 包含问题数据的响应
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -42,3 +43,5 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message || '获取问题树形数据失败' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

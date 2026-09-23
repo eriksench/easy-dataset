@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { evaluateDataset } from '@/lib/services/datasets/evaluation';
 
 /**
  * 评估单个数据集的质量
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId, datasetId } = params;
     const { model, language = 'zh-CN' } = await request.json();
@@ -34,3 +35,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ success: false, message: `评估失败: ${error.message}` }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

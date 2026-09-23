@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getProjectPath } from '@/lib/db/base';
 import { importImagesFromDirectories } from '@/lib/services/images';
@@ -6,7 +7,7 @@ import path from 'path';
 import { savePdfAsImages } from '@/lib/util/file';
 
 // PDF 转图片并导入
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   let tempPdfPath = null;
   let tempImagesDir = null;
 
@@ -96,3 +97,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to convert PDF' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

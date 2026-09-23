@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getEvalQuestionsWithPagination, getEvalQuestionsStats, deleteEvalQuestion } from '@/lib/db/evalDatasets';
 
 /**
  * Get project's evaluation dataset list (paginated)
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -56,7 +57,7 @@ export async function GET(request, { params }) {
 /**
  * Batch delete evaluation datasets
  */
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { ids } = await request.json();
 
@@ -83,7 +84,7 @@ export async function DELETE(request, { params }) {
 /**
  * Create a new evaluation dataset (or batch create)
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const body = await request.json();
@@ -162,3 +163,7 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to create eval dataset' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

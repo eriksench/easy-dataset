@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import {
   deleteDataset,
@@ -13,7 +14,7 @@ import datasetService from '@/lib/services/datasets';
 /**
  * 生成数据集（为单个问题生成答案）
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { questionId, model, language } = await request.json();
@@ -39,7 +40,7 @@ export async function POST(request, { params }) {
 /**
  * 获取项目的所有数据集
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -111,7 +112,7 @@ export async function GET(request, { params }) {
 /**
  * 删除数据集
  */
-export async function DELETE(request) {
+async function DELETEHandler(request) {
   try {
     const { searchParams } = new URL(request.url);
     const datasetId = searchParams.get('id');
@@ -144,7 +145,7 @@ export async function DELETE(request) {
 /**
  * 编辑数据集
  */
-export async function PATCH(request) {
+async function PATCHHandler(request) {
   try {
     const { searchParams } = new URL(request.url);
     const datasetId = searchParams.get('id');
@@ -191,3 +192,8 @@ export async function PATCH(request) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const PATCH = withProjectAccess(PATCHHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

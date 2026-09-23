@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getImageDatasetsByProject } from '@/lib/db/imageDatasets';
 import { getProjectPath } from '@/lib/db/base';
@@ -5,7 +6,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // 获取图片数据集列表
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -70,3 +71,5 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to get image datasets' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
@@ -36,7 +37,7 @@ function normalizeTaskModelInfo(modelInfo) {
 }
 
 // 获取任务配置
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -65,7 +66,7 @@ export async function GET(request, { params }) {
 }
 
 // 更新任务配置
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -107,7 +108,7 @@ export async function PUT(request, { params }) {
 }
 
 // 创建新任务
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const data = await request.json();
@@ -162,3 +163,7 @@ export async function POST(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const PUT = withProjectAccess(PUTHandler);

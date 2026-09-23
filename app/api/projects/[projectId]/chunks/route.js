@@ -1,8 +1,9 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { deleteChunkById, getChunkByFileIds, getChunkById, getChunksByFileIds, updateChunkById } from '@/lib/db/chunks';
 
 // 获取文本块内容
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     // 验证参数
@@ -19,3 +20,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: String(error) || 'Failed to get text block content' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

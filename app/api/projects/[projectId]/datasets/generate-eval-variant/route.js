@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getDatasetsById } from '@/lib/db/datasets';
 import LLMClient from '@/lib/llm/core/index';
 import { getEvalQuestionPrompt } from '@/lib/llm/prompts/evalQuestion';
 import { extractJsonFromLLMOutput } from '@/lib/llm/common/util';
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { datasetId, model, language, questionType = 'open_ended', count = 1 } = await request.json();
@@ -42,3 +43,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

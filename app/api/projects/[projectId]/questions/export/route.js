@@ -1,6 +1,7 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const body = await request.json();
@@ -98,3 +99,5 @@ async function getQuestionsByIds(projectId, questionIds) {
     }
   });
 }
+
+export const POST = withProjectAccess(POSTHandler);

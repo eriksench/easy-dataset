@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import {
   getDatasets,
@@ -12,7 +13,7 @@ import {
 /**
  * 获取导出数据集
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -42,7 +43,7 @@ export async function GET(request, { params }) {
 /**
  * 获取标签统计信息
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const body = await request.json();
@@ -126,3 +127,6 @@ export async function POST(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);

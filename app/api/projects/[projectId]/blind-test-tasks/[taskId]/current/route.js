@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/index';
 import LLMClient from '@/lib/llm/core/index';
@@ -6,7 +7,7 @@ import { getModelConfigById } from '@/lib/db/model-config';
 /**
  * Get current question and generate answers from two models
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, taskId } = params;
 
@@ -159,3 +160,5 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

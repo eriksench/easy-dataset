@@ -7,7 +7,6 @@ import Navbar from '@/components/Navbar/index';
 import HeroSection from '@/components/home/HeroSection';
 import ProjectList from '@/components/home/ProjectList';
 import CreateProjectDialog from '@/components/home/CreateProjectDialog';
-import MigrationDialog from '@/components/home/MigrationDialog';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
@@ -17,8 +16,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [unmigratedProjects, setUnmigratedProjects] = useState([]);
-  const [migrationDialogOpen, setMigrationDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchProjects() {
@@ -33,35 +30,11 @@ export default function Home() {
 
         const data = await response.json();
         setProjects(data);
-
-        // 检查是否有未迁移的项目
-        await checkUnmigratedProjects();
       } catch (error) {
         console.error(t('projects.fetchError'), String(error));
         setError(String(error));
       } finally {
         setLoading(false);
-      }
-    }
-
-    // 检查未迁移的项目
-    async function checkUnmigratedProjects() {
-      try {
-        const response = await fetch('/api/projects/unmigrated');
-
-        if (!response.ok) {
-          console.error('检查未迁移项目失败');
-          return;
-        }
-
-        const { success, data } = await response.json();
-
-        if (success && Array.isArray(data) && data.length > 0) {
-          setUnmigratedProjects(data);
-          setMigrationDialogOpen(true);
-        }
-      } catch (error) {
-        console.error('检查未迁移项目出错', error);
       }
     }
 
@@ -141,13 +114,6 @@ export default function Home() {
       </Container>
 
       <CreateProjectDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} />
-
-      {/* 项目迁移对话框 */}
-      <MigrationDialog
-        open={migrationDialogOpen}
-        onClose={() => setMigrationDialogOpen(false)}
-        projectIds={unmigratedProjects}
-      />
     </main>
   );
 }

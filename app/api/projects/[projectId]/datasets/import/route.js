@@ -1,8 +1,9 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { createDataset } from '@/lib/db/datasets';
 import { nanoid } from 'nanoid';
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { datasets, sourceInfo } = await request.json();
@@ -107,3 +108,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

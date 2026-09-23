@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/index';
 
 /**
  * Get current question info (including random swap info)
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   const { projectId, taskId } = params;
 
   try {
@@ -62,3 +63,5 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

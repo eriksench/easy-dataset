@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getProject } from '@/lib/db/projects';
 import { FILE } from '@/constant';
@@ -7,7 +8,7 @@ import { getSessionFromRequest } from '@/lib/auth/session';
 
 const MAX_FILES_PER_IMPORT = 20;
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   const session = await getSessionFromRequest(request);
   if (!session) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   const { projectId } = params;
@@ -63,3 +64,5 @@ export async function POST(request, { params }) {
 
   return NextResponse.json({ succeeded, failed });
 }
+
+export const POST = withProjectAccess(POSTHandler);

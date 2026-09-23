@@ -1,8 +1,9 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { deleteModelConfigById } from '@/lib/db/model-config';
 
 // 删除模型配置
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId, modelConfigId } = params;
     // 验证项目 ID
@@ -16,3 +17,5 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Failed to obtain model configuration' }, { status: 500 });
   }
 }
+
+export const DELETE = withProjectAccess(DELETEHandler);

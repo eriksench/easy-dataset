@@ -1,9 +1,10 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getImageByName } from '@/lib/db/images';
 import imageService from '@/lib/services/images';
 
 // 生成图片问题
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { imageName, count = 3, model, language = 'zh' } = await request.json();
@@ -38,3 +39,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to generate questions' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

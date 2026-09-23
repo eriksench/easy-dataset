@@ -10,6 +10,7 @@ datasource db {
 
 model Projects {
   id                   String                 @id @default(nanoid(12))
+  ownerUserId          String
   name                 String
   description          String
   globalPrompt         String                 @default("")
@@ -36,6 +37,9 @@ model Projects {
   ImageDatasets        ImageDatasets[]
   QuestionTemplates    QuestionTemplates[]
   EvalDatasets         EvalDatasets[]
+
+  @@unique([ownerUserId, name])
+  @@index([ownerUserId, createAt])
 }
 
 model UploadFiles {

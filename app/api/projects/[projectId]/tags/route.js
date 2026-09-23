@@ -1,9 +1,10 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getTags, createTag, updateTag, deleteTag } from '@/lib/db/tags';
 import { getQuestionsByTagName } from '@/lib/db/questions';
 
 // 获取项目的标签树
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -23,7 +24,7 @@ export async function GET(request, { params }) {
 }
 
 // 更新项目的标签树
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -48,7 +49,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -67,7 +68,7 @@ export async function POST(request, { params }) {
   }
 }
 
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -100,3 +101,8 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

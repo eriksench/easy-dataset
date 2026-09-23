@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getProject } from '@/lib/db/projects';
 import path from 'path';
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export const bodyParser = false;
 
 // 获取项目文件列表
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -46,7 +47,7 @@ export async function GET(request, { params }) {
 }
 
 // 删除文件
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -146,7 +147,7 @@ export async function DELETE(request, { params }) {
 }
 
 // 上传文件
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   console.log('File upload request processing, parameters:', params);
   const { projectId } = params;
 
@@ -205,3 +206,7 @@ export async function POST(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

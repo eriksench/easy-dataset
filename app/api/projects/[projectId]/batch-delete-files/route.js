@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getUploadFileInfoById, delUploadFileInfoById } from '@/lib/db/upload-files';
 import { getProject } from '@/lib/db/projects';
@@ -12,7 +13,7 @@ import { promises as fs } from 'fs';
  * 批量删除文件
  * 复用单个文件删除的完整逻辑，包括领域树修订
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const body = await request.json();
@@ -194,3 +195,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: String(error) || 'Failed to batch delete files' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getProjectPath } from '@/lib/db/base';
 import { importImagesFromDirectories } from '@/lib/services/images';
@@ -6,7 +7,7 @@ import path from 'path';
 import AdmZip from 'adm-zip';
 
 // 压缩包解压并导入图片
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   let tempZipPath = null;
   let tempExtractDir = null;
 
@@ -125,3 +126,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to import ZIP' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

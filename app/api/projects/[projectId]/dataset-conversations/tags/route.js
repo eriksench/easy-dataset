@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getAllDatasetConversations } from '@/lib/db/dataset-conversations';
 
 /**
  * 获取项目中多轮对话数据集的所有标签
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -40,3 +41,5 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

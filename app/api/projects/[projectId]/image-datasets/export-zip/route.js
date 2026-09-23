@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getImageDatasetsForExport } from '@/lib/db/imageDatasets';
 import archiver from 'archiver';
@@ -8,7 +9,7 @@ import fs from 'fs';
 /**
  * 导出图片文件压缩包
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -83,3 +84,5 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

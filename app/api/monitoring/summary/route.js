@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticationRequiredResponse, getCurrentUser, projectNotFoundResponse } from '@/lib/auth/project-access';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) return authenticationRequiredResponse();
+
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '7d';
     const projectId = searchParams.get('projectId');
@@ -21,15 +25,23 @@ export async function GET(request) {
       startDate.setDate(startDate.getDate() - 7);
     }
 
+    const projects = await db.projects.findMany({
+      where: { ownerUserId: currentUser.userId },
+      select: { id: true, name: true },
+      orderBy: { createAt: 'desc' }
+    });
+    const ownedProjectIds = projects.map(project => project.id);
+    if (projectId && projectId !== 'all' && !ownedProjectIds.includes(projectId)) {
+      return projectNotFoundResponse();
+    }
+
     const where = {
+      projectId: projectId && projectId !== 'all' ? projectId : { in: ownedProjectIds },
       createAt: {
         gte: startDate
       }
     };
 
-    if (projectId && projectId !== 'all') {
-      where.projectId = projectId;
-    }
     if (provider && provider !== 'all') {
       where.provider = provider;
     }
@@ -107,12 +119,8 @@ export async function GET(request) {
     const trend = Object.values(trendMap).sort((a, b) => a.name.localeCompare(b.name));
     const modelDistribution = Object.values(modelStats).sort((a, b) => b.value - a.value);
 
-    const projects = await db.projects.findMany({
-      select: { id: true, name: true },
-      orderBy: { createAt: 'desc' }
-    });
-
     const allLogs = await db.llmUsageLogs.findMany({
+      where: { projectId: { in: ownedProjectIds } },
       select: { provider: true },
       distinct: ['provider']
     });

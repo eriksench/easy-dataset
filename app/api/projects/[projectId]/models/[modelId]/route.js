@@ -1,9 +1,10 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getProjectRoot } from '@/lib/db/base';
 import path from 'path';
 import fs from 'fs/promises';
 
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, modelId } = params;
 
@@ -51,7 +52,7 @@ export async function GET(request, { params }) {
   }
 }
 
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId, modelId } = params;
 
@@ -119,7 +120,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId, modelId } = params;
 
@@ -171,3 +172,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Failed to delete model' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

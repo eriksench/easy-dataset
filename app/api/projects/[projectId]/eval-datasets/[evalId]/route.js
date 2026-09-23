@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getEvalQuestionById, updateEvalQuestion, deleteEvalQuestion } from '@/lib/db/evalDatasets';
 import { db } from '@/lib/db/index';
@@ -6,7 +7,7 @@ import { db } from '@/lib/db/index';
  * Get evaluation dataset details by ID
  * Supports operateType=prev|next to navigate neighbors
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, evalId } = params;
     const { searchParams } = new URL(request.url);
@@ -67,7 +68,7 @@ export async function GET(request, { params }) {
 /**
  * Update evaluation dataset
  */
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { evalId } = params;
     const data = await request.json();
@@ -94,7 +95,7 @@ export async function PUT(request, { params }) {
 /**
  * Delete evaluation dataset
  */
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { evalId } = params;
 
@@ -106,3 +107,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to delete eval question' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

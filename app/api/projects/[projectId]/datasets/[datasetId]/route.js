@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getDatasetsById, getDatasetsCounts, getNavigationItems, updateDatasetMetadata } from '@/lib/db/datasets';
 
 /**
  * 获取项目的所有数据集
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, datasetId } = params;
     // 验证项目ID
@@ -38,7 +39,7 @@ export async function GET(request, { params }) {
 /**
  * 更新数据集元数据（评分、标签、备注）
  */
-export async function PATCH(request, { params }) {
+async function PATCHHandler(request, { params }) {
   try {
     const { projectId, datasetId } = params;
 
@@ -80,3 +81,6 @@ export async function PATCH(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PATCH = withProjectAccess(PATCHHandler);

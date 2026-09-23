@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getDatasetsById, updateDataset } from '@/lib/db/datasets';
 import { getQuestionById } from '@/lib/db/questions';
@@ -7,7 +8,7 @@ import { getNewAnswerPrompt } from '@/lib/llm/prompts/newAnswer';
 import { extractJsonFromLLMOutput } from '@/lib/llm/common/util';
 
 // 优化数据集答案
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -87,3 +88,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to optimize answer' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

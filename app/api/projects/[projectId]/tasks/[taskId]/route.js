@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 // 获取任务详情
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, taskId } = params;
 
@@ -56,7 +57,7 @@ export async function GET(request, { params }) {
 }
 
 // 更新任务状态
-export async function PATCH(request, { params }) {
+async function PATCHHandler(request, { params }) {
   try {
     const { projectId, taskId } = params;
     const data = await request.json();
@@ -130,7 +131,7 @@ export async function PATCH(request, { params }) {
 }
 
 // 删除任务
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId, taskId } = params;
 
@@ -169,3 +170,7 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PATCH = withProjectAccess(PATCHHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

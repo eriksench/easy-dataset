@@ -1,8 +1,9 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { deleteChunkById, getChunkById, updateChunkById } from '@/lib/db/chunks';
 
 // 获取文本块内容
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, chunkId } = params;
     // 验证参数
@@ -23,7 +24,7 @@ export async function GET(request, { params }) {
 }
 
 // 删除文本块
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId, chunkId } = params;
     // 验证参数
@@ -43,7 +44,7 @@ export async function DELETE(request, { params }) {
 }
 
 // 编辑文本块内容
-export async function PATCH(request, { params }) {
+async function PATCHHandler(request, { params }) {
   try {
     const { projectId, chunkId } = params;
 
@@ -71,3 +72,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: error.message || '编辑文本块失败' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PATCH = withProjectAccess(PATCHHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

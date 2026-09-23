@@ -1,10 +1,12 @@
 import { getProjectRoot } from '@/lib/db/base';
 import { NextResponse } from 'next/server';
 import path from 'path';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
+import fs from 'fs/promises';
+import { requireOwnedProject } from '@/lib/auth/project-access';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /**
  * Open project directory
@@ -24,9 +26,17 @@ export async function POST(request) {
       );
     }
 
+    const access = await requireOwnedProject(request, projectId);
+    if (access.response) return access.response;
+
     // Get project root directory
     const projectRoot = await getProjectRoot();
-    const projectPath = path.join(projectRoot, projectId);
+    const resolvedRoot = path.resolve(projectRoot);
+    const projectPath = path.resolve(resolvedRoot, projectId);
+    if (!projectPath.startsWith(`${resolvedRoot}${path.sep}`)) {
+      return NextResponse.json({ error: 'Invalid project path' }, { status: 400 });
+    }
+    await fs.access(projectPath);
 
     // Open directory based on OS
     const platform = process.platform;
@@ -34,16 +44,16 @@ export async function POST(request) {
 
     if (platform === 'win32') {
       // Windows
-      command = `explorer "${projectPath}"`;
+      command = 'explorer';
     } else if (platform === 'darwin') {
       // macOS
-      command = `open "${projectPath}"`;
+      command = 'open';
     } else {
       // Linux and others
-      command = `xdg-open "${projectPath}"`;
+      command = 'xdg-open';
     }
 
-    await execAsync(command);
+    await execFileAsync(command, [projectPath]);
 
     return NextResponse.json({
       success: true,

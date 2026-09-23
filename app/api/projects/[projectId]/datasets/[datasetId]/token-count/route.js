@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getDatasetsById } from '@/lib/db/datasets';
 import { getEncoding } from '@langchain/core/utils/tiktoken';
@@ -5,7 +6,7 @@ import { getEncoding } from '@langchain/core/utils/tiktoken';
 /**
  * 异步计算数据集文本的Token数量
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, datasetId } = params;
 
@@ -50,3 +51,5 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

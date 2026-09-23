@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getImages, deleteImage, getImageDetail } from '@/lib/db/images';
 import { getProjectPath } from '@/lib/db/base';
@@ -7,7 +8,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // 获取图片列表
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -29,7 +30,7 @@ export async function GET(request, { params }) {
 }
 
 // 导入图片
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { directories } = await request.json();
@@ -45,7 +46,7 @@ export async function POST(request, { params }) {
 }
 
 // 删除图片
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -90,3 +91,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to delete image' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getQuestionsForChunk } from '@/lib/db/questions';
 import logger from '@/lib/util/logger';
 import questionService from '@/lib/services/questions';
 
 // 为指定文本块生成问题
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId, chunkId } = params;
 
@@ -48,7 +49,7 @@ export async function POST(request, { params }) {
 }
 
 // 获取指定文本块的问题
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, chunkId } = params;
 
@@ -71,3 +72,6 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message || 'Error getting questions' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);

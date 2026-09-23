@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { generateEvalQuestionsForChunk } from '@/lib/services/eval';
 import logger from '@/lib/util/logger';
@@ -5,7 +6,7 @@ import logger from '@/lib/util/logger';
 /**
  * 为指定文本块生成测评题目
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId, chunkId } = params;
 
@@ -33,3 +34,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to generate eval questions' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

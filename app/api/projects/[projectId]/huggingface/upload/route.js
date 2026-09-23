@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getProject } from '@/lib/db/projects';
 import { getDatasets } from '@/lib/db/datasets';
@@ -7,7 +8,7 @@ import os from 'os';
 import { uploadFiles, createRepo, checkRepoAccess } from '@huggingface/hub';
 
 // 上传数据集到 HuggingFace
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const projectId = params.projectId;
     const {
@@ -308,3 +309,5 @@ This dataset was created using the [Easy Dataset](https://github.com/ConardLi/ea
 
 `;
 }
+
+export const POST = withProjectAccess(POSTHandler);

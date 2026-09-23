@@ -1,7 +1,8 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 // 获取项目详情
 import { deleteProject, getProject, updateProject, getTaskConfig } from '@/lib/db/projects';
 
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const project = await getProject(projectId);
@@ -17,7 +18,7 @@ export async function GET(request, { params }) {
 }
 
 // 更新项目
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params, currentUser }) {
   try {
     const { projectId } = params;
     const projectData = await request.json();
@@ -34,7 +35,11 @@ export async function PUT(request, { params }) {
       return Response.json({ error: '项目名称不能为空' }, { status: 400 });
     }
 
-    const updatedProject = await updateProject(projectId, projectData);
+    const allowedUpdates = {};
+    if (hasNameField) allowedUpdates.name = projectData.name;
+    if (hasDefaultModelField) allowedUpdates.defaultModelConfigId = projectData.defaultModelConfigId;
+
+    const updatedProject = await updateProject(projectId, allowedUpdates, currentUser.userId);
 
     if (!updatedProject) {
       return Response.json({ error: '项目不存在' }, { status: 404 });
@@ -48,10 +53,10 @@ export async function PUT(request, { params }) {
 }
 
 // 删除项目
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params, currentUser }) {
   try {
     const { projectId } = params;
-    const success = await deleteProject(projectId);
+    const success = await deleteProject(projectId, currentUser.userId);
 
     if (!success) {
       return Response.json({ error: '项目不存在' }, { status: 404 });
@@ -63,3 +68,7 @@ export async function DELETE(request, { params }) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

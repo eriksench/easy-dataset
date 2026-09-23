@@ -1,9 +1,10 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import { getProjectRoot } from '@/lib/db/base';
 
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     if (!projectId) {
@@ -25,3 +26,5 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

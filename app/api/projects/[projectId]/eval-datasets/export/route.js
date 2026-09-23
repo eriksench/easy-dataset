@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/index';
 import { buildEvalQuestionWhere } from '@/lib/db/evalDatasets';
@@ -48,7 +49,7 @@ function formatExportItem(item) {
  * Supports JSON, JSONL, and CSV
  * Uses batched streaming for large datasets
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const body = await request.json();
@@ -197,7 +198,7 @@ export async function POST(request, { params }) {
 /**
  * Get export preview (count only)
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -229,3 +230,6 @@ export async function GET(request, { params }) {
     return NextResponse.json({ code: 500, error: error.message || 'Failed to get export preview' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);

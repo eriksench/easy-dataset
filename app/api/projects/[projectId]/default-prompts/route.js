@@ -1,7 +1,8 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 
 // 获取默认提示词内容
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { searchParams } = new URL(request.url);
     const promptType = searchParams.get('promptType');
@@ -36,3 +37,5 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

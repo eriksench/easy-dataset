@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/index';
 
@@ -5,7 +6,7 @@ import { db } from '@/lib/db/index';
  * Get blind-test task details
  * Results are fetched from EvalResults table
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, taskId } = params;
 
@@ -100,7 +101,7 @@ export async function GET(request, { params }) {
 /**
  * Update blind-test task (interrupt/stop)
  */
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId, taskId } = params;
     const { action } = await request.json();
@@ -150,7 +151,7 @@ export async function PUT(request, { params }) {
 /**
  * Delete blind-test task and its results
  */
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId, taskId } = params;
 
@@ -188,3 +189,7 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

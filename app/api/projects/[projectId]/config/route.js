@@ -1,8 +1,9 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getProject, updateProject, getTaskConfig } from '@/lib/db/projects';
 
 // 获取项目配置
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const projectId = params.projectId;
     const config = await getProject(projectId);
@@ -15,7 +16,7 @@ export async function GET(request, { params }) {
 }
 
 // 更新项目配置
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const projectId = params.projectId;
     const newConfig = await request.json();
@@ -34,3 +35,6 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);

@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import {
   getCustomPrompts,
@@ -10,7 +11,7 @@ import {
 } from '@/lib/db/custom-prompts';
 
 // 获取项目的自定义提示词
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -36,7 +37,7 @@ export async function GET(request, { params }) {
 }
 
 // 保存自定义提示词
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const body = await request.json();
@@ -77,7 +78,7 @@ export async function POST(request, { params }) {
 }
 
 // 删除自定义提示词
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -103,3 +104,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

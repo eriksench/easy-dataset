@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { splitProjectFile, getProjectChunks } from '@/lib/file/text-splitter';
 import { getProject, updateProject } from '@/lib/db/projects';
@@ -5,7 +6,7 @@ import { getTags } from '@/lib/db/tags';
 import { handleDomainTree } from '@/lib/util/domain-tree';
 
 // 处理文本分割请求
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -60,7 +61,7 @@ export async function POST(request, { params }) {
 }
 
 // 获取项目中的所有文本块
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -86,3 +87,6 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to get text chunks' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);

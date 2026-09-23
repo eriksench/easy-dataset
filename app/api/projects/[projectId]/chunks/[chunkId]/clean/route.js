@@ -1,9 +1,10 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import logger from '@/lib/util/logger';
 import cleanService from '@/lib/services/clean';
 
 // 为指定文本块进行数据清洗
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId, chunkId } = params;
 
@@ -38,3 +39,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Error cleaning data' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

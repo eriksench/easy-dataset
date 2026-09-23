@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import {
   getAllQuestionsByProjectId,
@@ -9,7 +10,7 @@ import {
 import { getImageById, getImageChunk } from '@/lib/db/images';
 
 // 获取项目的所有问题
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     // 验证项目ID
@@ -61,7 +62,7 @@ export async function GET(request, { params }) {
 }
 
 // 新增问题
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const body = await request.json();
@@ -92,7 +93,7 @@ export async function POST(request, { params }) {
 }
 
 // 更新问题
-export async function PUT(request) {
+async function PUTHandler(request) {
   try {
     const body = await request.json();
     // 保存更新后的数据
@@ -108,3 +109,7 @@ export async function PUT(request) {
     return NextResponse.json({ error: error.message || '更新问题失败' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const PUT = withProjectAccess(PUTHandler);

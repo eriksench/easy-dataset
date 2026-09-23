@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { distillQuestionsPrompt } from '@/lib/llm/prompts/distillQuestions';
 import { db } from '@/lib/db';
@@ -7,7 +8,7 @@ const LLMClient = require('@/lib/llm/core');
 /**
  * 生成问题接口：根据某个标签链路构造指定数量的问题
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -99,3 +100,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || '生成问题失败' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

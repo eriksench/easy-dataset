@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 /**
  * 单个多轮对话数据集操作API
  */
@@ -13,7 +14,7 @@ import {
 /**
  * 获取单个多轮对话数据集详情
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, conversationId } = params;
     const { searchParams } = new URL(request.url);
@@ -63,7 +64,7 @@ export async function GET(request, { params }) {
 /**
  * 更新多轮对话数据集
  */
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId, conversationId } = params;
     const body = await request.json();
@@ -137,7 +138,7 @@ export async function PUT(request, { params }) {
 /**
  * 删除多轮对话数据集
  */
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId, conversationId } = params;
 
@@ -181,3 +182,7 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

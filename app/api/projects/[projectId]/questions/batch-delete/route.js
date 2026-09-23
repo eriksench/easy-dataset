@@ -1,8 +1,9 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { batchDeleteQuestions } from '@/lib/db/questions';
 
 // 批量删除问题
-export async function DELETE(request) {
+async function DELETEHandler(request) {
   try {
     const body = await request.json();
     const { questionIds } = body;
@@ -21,3 +22,5 @@ export async function DELETE(request) {
     return NextResponse.json({ error: error.message || 'Delete failed' }, { status: 500 });
   }
 }
+
+export const DELETE = withProjectAccess(DELETEHandler);

@@ -1,8 +1,9 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { deleteQuestion } from '@/lib/db/questions';
 
 // 删除单个问题
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { projectId, questionId } = params;
 
@@ -24,3 +25,5 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: error.message || 'Delete failed' }, { status: 500 });
   }
 }
+
+export const DELETE = withProjectAccess(DELETEHandler);

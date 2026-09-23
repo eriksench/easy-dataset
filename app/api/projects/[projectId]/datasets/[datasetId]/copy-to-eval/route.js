@@ -1,7 +1,8 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function POST(req, { params }) {
+async function POSTHandler(req, { params }) {
   try {
     const { projectId, datasetId } = params;
 
@@ -75,3 +76,5 @@ export async function POST(req, { params }) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

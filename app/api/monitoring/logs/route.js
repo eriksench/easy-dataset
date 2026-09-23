@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticationRequiredResponse, getCurrentUser, projectNotFoundResponse } from '@/lib/auth/project-access';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) return authenticationRequiredResponse();
+
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '7d';
     const projectId = searchParams.get('projectId');
@@ -24,15 +28,22 @@ export async function GET(request) {
       startDate.setDate(startDate.getDate() - 7);
     }
 
+    const ownedProjects = await db.projects.findMany({
+      where: { ownerUserId: currentUser.userId },
+      select: { id: true, name: true }
+    });
+    const ownedProjectIds = ownedProjects.map(project => project.id);
+    if (projectId && projectId !== 'all' && !ownedProjectIds.includes(projectId)) {
+      return projectNotFoundResponse();
+    }
+
     const where = {
+      projectId: projectId && projectId !== 'all' ? projectId : { in: ownedProjectIds },
       createAt: {
         gte: startDate
       }
     };
 
-    if (projectId && projectId !== 'all') {
-      where.projectId = projectId;
-    }
     if (provider && provider !== 'all') {
       where.provider = provider;
     }
@@ -67,12 +78,7 @@ export async function GET(request) {
       take: pageSize
     });
 
-    const projectIds = [...new Set(logs.map(log => log.projectId))];
-    const projects = await db.projects.findMany({
-      where: { id: { in: projectIds } },
-      select: { id: true, name: true }
-    });
-    const projectMap = projects.reduce((acc, p) => {
+    const projectMap = ownedProjects.reduce((acc, p) => {
       acc[p.id] = p.name;
       return acc;
     }, {});

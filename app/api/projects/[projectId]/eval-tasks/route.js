@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/index';
 import { processTask } from '@/lib/services/tasks';
@@ -5,7 +6,7 @@ import { processTask } from '@/lib/services/tasks';
 /**
  * Get all evaluation tasks for a project
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -77,7 +78,7 @@ export async function GET(request, { params }) {
  * Create evaluation tasks
  * Supports selecting multiple models and creating one task per model
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const data = await request.json();
@@ -205,3 +206,6 @@ export async function POST(request, { params }) {
     );
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);

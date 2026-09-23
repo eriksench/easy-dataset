@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { saveChunks, deleteChunksByFileId } from '@/lib/db/chunks';
 import path from 'path';
@@ -10,7 +11,7 @@ import { getProjectRoot } from '@/lib/db/base';
  * @param {Object} params - 路由参数
  * @returns {Promise<Response>} - 响应对象
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { fileId, fileName, content, splitPoints } = await request.json();
@@ -114,3 +115,5 @@ function generateCustomChunks(projectId, fileId, fileName, content, splitPoints)
 
   return chunks;
 }
+
+export const POST = withProjectAccess(POSTHandler);

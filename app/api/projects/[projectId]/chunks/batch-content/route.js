@@ -1,7 +1,8 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { getChunkContentsByNames } from '@/lib/db/chunks';
 import { NextResponse } from 'next/server';
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { chunkNames } = await request.json();
@@ -18,3 +19,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: '批量获取文本块内容失败' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

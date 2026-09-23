@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
 import { getProjectRoot } from '@/lib/db/base';
 
 // 获取模型配置
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -47,7 +48,7 @@ export async function GET(request, { params }) {
 }
 
 // 更新模型配置
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -87,3 +88,6 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: 'Failed to update model configuration' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);

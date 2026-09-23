@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
  * 更新标签接口
  */
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId, tagId } = params;
 
@@ -59,3 +60,5 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: error.message || '更新标签失败' }, { status: 500 });
   }
 }
+
+export const PUT = withProjectAccess(PUTHandler);

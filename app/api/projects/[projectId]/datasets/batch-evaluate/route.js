@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 /**
  * 批量数据集评估任务API
  * 创建批量评估数据集质量的异步任务
@@ -10,7 +11,7 @@ import { processTask } from '@/lib/services/tasks/index';
 /**
  * 创建批量数据集评估任务
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { model, language = 'zh-CN' } = await request.json();
@@ -53,3 +54,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ success: false, message: `创建任务失败: ${error.message}` }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

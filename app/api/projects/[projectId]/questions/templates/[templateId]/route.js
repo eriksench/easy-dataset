@@ -1,9 +1,10 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import templateDb from '@/lib/db/questionTemplates';
 import { generateQuestionsFromTemplateEdit } from '@/lib/services/questions/template';
 
 // 获取单个模板
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { templateId } = params;
 
@@ -30,7 +31,7 @@ export async function GET(request, { params }) {
 }
 
 // 更新问题模板
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId, templateId } = params;
     const data = await request.json();
@@ -87,7 +88,7 @@ export async function PUT(request, { params }) {
 }
 
 // 删除问题模板
-export async function DELETE(request, { params }) {
+async function DELETEHandler(request, { params }) {
   try {
     const { templateId } = params;
 
@@ -108,3 +109,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to delete template' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const DELETE = withProjectAccess(DELETEHandler);

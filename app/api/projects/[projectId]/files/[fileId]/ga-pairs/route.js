@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { getGaPairsByFileId, toggleGaPairActive, saveGaPairs, createGaPairs } from '@/lib/db/ga-pairs';
 import { getUploadFileInfoById } from '@/lib/db/upload-files';
@@ -8,7 +9,7 @@ import { db } from '@/lib/db/index';
 /**
  * 生成文件的 GA 对
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId, fileId } = params;
     const { regenerate = false, appendMode = false, language = '中文' } = await request.json();
@@ -176,7 +177,7 @@ export async function POST(request, { params }) {
 /**
  * 获取文件的 GA 对
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId, fileId } = params;
 
@@ -199,7 +200,7 @@ export async function GET(request, { params }) {
 /**
  * 更新/替换文件的所有 GA 对
  */
-export async function PUT(request, { params }) {
+async function PUTHandler(request, { params }) {
   try {
     const { projectId, fileId } = params;
     const body = await request.json();
@@ -268,7 +269,7 @@ export async function PUT(request, { params }) {
 /**
  * 切换 GA 对激活状态
  */
-export async function PATCH(request, { params }) {
+async function PATCHHandler(request, { params }) {
   try {
     const { projectId, fileId } = params;
     const body = await request.json();
@@ -311,3 +312,8 @@ async function getFileContent(projectId, fileName) {
     return null;
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);
+export const PUT = withProjectAccess(PUTHandler);
+export const PATCH = withProjectAccess(PATCHHandler);

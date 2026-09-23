@@ -1,9 +1,10 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import templateDb from '@/lib/db/questionTemplates';
 import { generateQuestionsFromTemplate, checkTemplateGenerationAvailability } from '@/lib/services/questions/template';
 
 // 获取问题模板列表
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
@@ -33,7 +34,7 @@ export async function GET(request, { params }) {
 }
 
 // 创建问题模板
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const data = await request.json();
@@ -114,3 +115,6 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || 'Failed to create template' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);
+export const POST = withProjectAccess(POSTHandler);

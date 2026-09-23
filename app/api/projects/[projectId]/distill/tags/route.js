@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { distillTagsPrompt } from '@/lib/llm/prompts/distillTags';
 import { db } from '@/lib/db';
@@ -8,7 +9,7 @@ const LLMClient = require('@/lib/llm/core');
 /**
  * 生成标签接口：根据顶级主题、某级标签构造指定数量的子标签
  */
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -86,3 +87,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message || '生成标签失败' }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

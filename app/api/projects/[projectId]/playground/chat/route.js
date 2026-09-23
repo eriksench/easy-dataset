@@ -1,3 +1,4 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import LLMClient from '@/lib/llm/core/index';
 import { getModelConfigById } from '@/lib/db/model-config';
@@ -28,7 +29,7 @@ async function resolveLatestModelConfig(projectId, incomingModel = {}) {
   }
 }
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -97,3 +98,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: `Failed to process chat request: ${error.message}` }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);

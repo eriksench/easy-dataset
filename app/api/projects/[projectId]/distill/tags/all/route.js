@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
  * 获取项目的所有蒸馏标签
  */
-export async function GET(request, { params }) {
+async function GETHandler(request, { params }) {
   try {
     const { projectId } = params;
 
@@ -29,3 +30,5 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: error.message || '获取蒸馏标签失败' }, { status: 500 });
   }
 }
+
+export const GET = withProjectAccess(GETHandler);

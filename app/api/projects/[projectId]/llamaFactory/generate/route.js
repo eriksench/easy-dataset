@@ -1,10 +1,11 @@
+import { withProjectAccess } from '@/lib/auth/project-access';
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import { getProjectRoot } from '@/lib/db/base';
 import { getDatasets } from '@/lib/db/datasets';
 
-export async function POST(request, { params }) {
+async function POSTHandler(request, { params }) {
   try {
     const { projectId } = params;
     const { formatType, systemPrompt, confirmedOnly, includeCOT, reasoningLanguage } = await request.json();
@@ -139,3 +140,5 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const POST = withProjectAccess(POSTHandler);
